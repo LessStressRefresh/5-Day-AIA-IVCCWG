@@ -201,7 +201,6 @@ Create a local skill directory
 definition file `age-reviewer/.agents/skills/stride-threat-model/SKILL.md`
 with the following content:
 
----
 name: stride-threat-model
 description: Performs a systematic STRIDE threat modeling assessment on the
 current project's codebase and architecture. Use this when starting a new
