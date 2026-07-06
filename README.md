@@ -6,6 +6,12 @@ Note Propmpts are encapsulated between "---"
 Main File: Ticket-Reviewer-Agent
 Additional File: Local Agent_V1 Reference file for the Agent running using the Antigravity CLI
 
+Problem:
+larger Companies or individuals would require validaiton against tickets, With the increase of digital tickets validation options may be limited.
+
+Solution:
+An AI agent that allowes for conditions to be stipulated and conditions to be reviewed allowes for a safe review process, This provides reporting and safe guards to be put in place. 
+
 ###
 Index:
 ###
