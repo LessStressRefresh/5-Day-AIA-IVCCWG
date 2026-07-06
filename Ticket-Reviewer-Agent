@@ -128,7 +128,7 @@ In our tool logic, we check an in-memory dictionary (Age_Reviwer) and modify its
 ###
 Lint the Initial Agent Graph
 ---
-Run `agents-cli lint` on our `shopping-assistant` project to verify syntax and refactor if any issues.
+Run `agents-cli lint` on our `age-reviewer` project to verify syntax and refactor if any issues.
 ---
 
 Project-Specific Rules
