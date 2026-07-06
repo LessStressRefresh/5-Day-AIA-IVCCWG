@@ -1,0 +1,379 @@
+Installing and configuring Antigravity CLI
+
+
+Creating Project Folder:
+---
+mkdir Ticket-Reviewer-project
+---
+OS-AntiGravity Install:
+macOS | Linux
+---
+curl -fsSL https://antigravity.google/cli/install.sh | bash
+---
+Windows PowerShell
+---
+irm https://antigravity.google/cli/install.ps1 | iex
+---
+Windows CMD
+---
+curl -fsSL https://antigravity.google/cli/install.cmd -o install.cmd && install.cmd && del install.cmd
+---
+#This should ideally setup and install the Antigravity CLI (agy) in your system and in the Path.
+When we launch Antigravity CLI for the first time, it will ask you to login. Launch agy in the terminal: Type: agy
+Use your personal account for now. Choose 1. Google OAuth and press Enter. This will launch a browser and you can login with your Google Account. On successful authentication and authorization, you are asked to copy a code. Please come back into the Antigravity CLI terminal and paste the code.
+***
+Note On Tool Permissions:
+An important setting to understand is the Tool Permission. This controls whether terminal commands require your approval before running. You can get to this via the /config command.
+ Tool Permission
+  > request-review (current)
+    proceed-in-sandbox
+    always-proceed
+    strict
+By default, it is set to request-review. Let's understand this in more detail. In Antigravity, Tool Permission settings control the balance between security (guarding your host system against unintended changes) and velocity (how autonomously the agent can work without pausing for your input). Let's review the options:
+request-review (Current Default)
+In this mode, the agent is treated as a collaborative partner that checks in before performing any action that could affect your system or project files outside of pre-approved bounds. Whenever the agent attempts to run a terminal command, perform a file operation (like writing/deleting), or call an external service where permission hasn't been pre-approved, the execution pauses. The user is prompted to approve or reject the specific action.
+proceed-in-sandbox
+This mode allows the agent to execute terminal commands automatically, but within a secure, isolated container. The agent can run commands without prompting you, but those commands are executed in a virtualized sandbox (e.g., a lightweight container). They cannot modify your actual host machine's filesystem or access your local network.
+always-proceed
+This is the fully autonomous mode, giving the agent maximum speed and capability. The agent is granted full permission to run commands and write files directly on your host machine. It will never prompt you for confirmation.
+strict
+This is a zero-trust, high-security mode. The agent's capabilities are restricted to executing read tools. All non-read tools will require the user to be prompted for action.
+***
+---
+
+###
+Set up your Google Cloud Environment
+###
+
+---Prompt---
+
+---
+Help me set up my Google Cloud environment. Connect to my project
+`YOUR_PROJECT_ID` in the global region, authenticate, and enable the necessary
+generative platform APIs (aiplatform.googleapis.com, cloudtrace.googleapis.com,
+cloudbuild.googleapis.com, agentregistry.googleapis.com).
+---
+
+---
+Give Antigravity the ADK skills
+For Antigravity to build ADK agents well, it needs the ADK skill set. These are bundled references for the ADK API, project scaffolding, the agents-cli workflow, and evaluation. Installing the agents-cli toolchain also installs these skills into your coding agent. 
+ADK Skill Prompt for agy:
+---
+
+Set up Agents CLI & ADK Skills
+
+---
+Install the agents-cli toolchain and its ADK skills so you can help me build
+an ADK agent. Run "uvx google-agents-cli setup", then confirm with
+"agents-cli info" 
+---
+
+###
+Secure:
+###
+
+• Scaffold and build a ADK 2.0 age reviewer agent
+• Set up project-level secure coding standards using a persistent context file (CONTEXT.md).
+
+• Build and invoke a custom workspace-level STRIDE Threat Modeling Skill in Antigravity IDE.
+• Enforce security guardrails directly during the TDD Plan Phase.
+• Write outcome-based security tests in Pytest using Antigravity.
+
+Set up Authentication & Environment
+
+Provide your authentication credentials for the agent to call Gemini models. Obtain a standard Gemini API key from Google AI Studio and export it in your IDE terminal session:
+
+---
+export GEMINI_API_KEY="Note_your_api_key_here"
+export GOOGLE_GENAI_USE_ENTERPRISE=FALSE
+---
+
+---
+Help me set up my local project workspace. Please:
+1. Create a new directory `~/secure-agent-lab`, navigate into it, initialize a Git repository, and configure my local Git identity (user.name:"Kaggle Student", user.email: "student@example.com").
+2. Create and activate a Python virtual environment using `uv`.
+3. Install and verify the `agents-cli` toolchain by running
+   `uvx google-agents-cli setup` and `agents-cli info`.
+---
+
+###
+Scaffold the ADK Agent Project
+###
+
+---
+Use `agents-cli` to scaffold a new ADK 2.0 agent project called
+`age-reviewer`. The workflow should act as an AI age reviewer
+for a movie house. It should include a tool to output a review list of ticket buyers (checking an in-memory store for ages like Guardian required and under the age of 18,
+ensuring that the tickets for ages under 18 require a guardian and requiring a registered user ID).
+
+Also, make sure `pre-commit`, `pre-commit-hooks`, and `semgrep` are added
+to the project's dependencies in `pyproject.toml` and installed. 
+---
+
+#Note:
+Ask Antigravity to explain the generated code:
+
+---
+Read and explain the project structure of my new age reviewer agent.
+Walk me through how `app/agent.py` is configured, highlighting the role of the age reviewer tool, the LlmAgent, and the root Workflow.
+---
+
+###
+Note:
+
+#Important:
+Production Best Practice: Concurrency & Race Conditions
+In our tool logic, we check an in-memory dictionary (Age_Reviwer) and modify its state. In a multi-threaded production environment with a real database, two concurrent requests could both read the code as unredeemed before either write commits, causing a double-redemption vulnerability. In production, always use pessimistic locking (e.g., .with_for_update()) or optimistic versioning to ensure transaction isolation.
+
+###
+Lint the Initial Agent Graph
+---
+Run `agents-cli lint` on our `shopping-assistant` project to verify syntax and refactor if any issues.
+---
+
+Project-Specific Rules
+
+---
+
+Create a customization directory named `age-reviewer/.agents` and
+create a file `Age-reviewer/.agents/CONTEXT.md` defining our secure
+coding standards:
+
+# Local Project Context & Secure Coding Standards
+
+## Core Paved Roads
+We systematically address common vulnerability classes by guiding the agent
+to use our pre-configured, secure-by-default helper patterns instead of
+writing raw implementation logic from scratch.
+
+1. **Tool Input Validation**: Every agent tool must validate incoming
+   parameters against strict Pydantic schemas rather than parsing raw
+   dictionaries or strings.
+2. **No Shell Execution**: Never use `run_command` or raw shell execution
+   tools unless explicitly approved by `hooks.json`.
+3. **Pre-Commit Remediation Loop**: If a git commit fails due to a pre-commit
+   hook error (such as a Semgrep scan finding), you MUST treat the violation
+   as a refactoring task, apply targeted fixes, run tests to verify no
+   regressions, and attempt to commit again.
+
+Configure Local Gating Hooks:
+• Git Pre-Commit Hook
+---
+Create a custom Semgrep rules file `age-reviewer/.semgrep/rules.yaml`
+with a rule to detect hardcoded Google API key prefixes (matching regex
+`AIzaSy[A-Za-z0-9_\-]*`). Configure it for Python files with an error severity
+and a clear security warning message.
+---
+Configure the Pre-Commit Hook
+---
+Create a `age-reviewer/.pre-commit-config.yaml` file configured to run
+local pre-commit hooks (end-of-file-fixer, trailing-whitespace) and a local
+Semgrep security scan on commit for Python files. Ensure Semgrep is configured
+with the `--error` flag and references our custom rules file relative to the Git
+repository root. Once created, run `pre-commit install` in the
+terminal to activate the hooks.
+---
+###
+Note:
+The --error flag is critical; without it, Semgrep will log the security finding to standard output but return exit code 0 (success by default), which allows the unsafe commit to pass. Pre-commit only blocks commits on non-zero exit codes.
+###
+
+Built-in Antigravity Agent Hook
+---
+Create a `age-reviewer/.agents/hooks.json` file configured with a
+`PreToolUse` hook that intercepts `run_command` executions and runs
+`python3 .agents/scripts/validate_tool_call.py` with a 10-second timeout.
+---
+###
+Important Note:
+Caution: To safely intercept tool executions like run_command, the PreToolUse event definition MUST include the mandatory matcher field. Leaving this out or misconfiguring it can let the agent execute raw, unchecked shell actions.
+###
+---
+Create the script `age-reviwer/.agents/scripts/validate_tool_call.py`
+with logic to inspect `run_command` executions passed using stdin and block
+destructive commands like `rm -rf /`.
+---
+Implement STRIDE Threat Modeling Skill
+
+---
+Create a local skill directory
+`age-reviewer/.agents/skills/stride-threat-model/` and create a skill
+definition file `age-reviewer/.agents/skills/stride-threat-model/SKILL.md`
+with the following content:
+
+---
+name: stride-threat-model
+description: Performs a systematic STRIDE threat modeling assessment on the
+current project's codebase and architecture. Use this when starting a new
+implementation phase or reviewing existing components.
+---
+
+# STRIDE Threat Modeling Skill
+
+## Goal
+Guide the agent to analyze the workspace directory structure, configuration
+files, and code files to produce a structured `threat_model.md` assessment.
+
+## Instructions
+1. **Analyze System Boundaries**: Map the entry points (tools, workflows,
+   prompts) and data storage layers.
+2. **STRIDE Evaluation**: Evaluate the system against the six STRIDE pillars:
+   - **Spoofing**: Are caller identity boundaries verified before executing
+     sensitive tool logic?
+   - **Tampering**: Can users manipulate data flows, parameters, or underlying
+     state?
+   - **Repudiation**: Are critical transactions securely logged?
+   - **Information Disclosure**: Are we risking leakage of PII, internal tokens,
+     or raw stack traces?
+   - **Denial of Service**: Are there rate limits on expensive database or LLM
+     queries?
+   - **Elevation of Privilege**: Can an unauthenticated user bypass access
+     control to reach privileged tool actions?
+3. **Output**: Generate a highly structured `threat_model.md` saved directly
+   into the workspace root.
+---
+Run STRIDE Threat Modeling:
+---
+Run stride-threat-model on our age-reviewer agent graph.
+---
+
+ Gate the TDD Plan Phase:
+
+---
+Append the following TDD planning gate instruction to the bottom of
+`age-reviewer/.agents/CONTEXT.md`:
+
+## TDD Planning Gate
+During the Plan phase, you must decompose the workspace task into logical,
+modular stages. Every implementation plan MUST include a dedicated
+**Security Boundaries & Assertions** section outlining specific edge cases
+that could exploit the feature.
+---
+
+###
+Create the agent project
+###
+
+---
+Use Agents CLI to build a local prototype for an age reviewer agent that
+streamlines ticket review reporting by instantly approving ages of 18 or older
+while flagging lower ages for review. Ensure the graph workflow is
+compatible with ADK 2.0 and includes an `auto_approve` node that automatically
+approves ages of 18 or older, and a `review_agent` node that triggers a
+human-in-the-loop pause (`RequestInput`) for ages under 18 that may also require a guardian.
+---
+
+Agent Runtime:
+---
+Scaffold the production deployment files for Agent Runtime.
+---
+Packaging and Local Verification
+---
+Lock my python dependencies and run a dry-run deployment to check for any
+configuration or dependency issues.
+---
+Deploy to Agent Runtime
+---
+Deploy this agent to Agent Runtime.
+---
+###
+Note for Agent Test:
+Prompt Antigravity to verify the live deployed engine:
+---
+Test my deployed Agent Runtime engine with two test cases: first a standard
+ticket with the age of 18 to verify automatic approval, and second, a ticket with the age of 17 to verify that the human-in-the-loop pause is triggered.
+---
+###
+
+###
+Note:
+Optional: Verify ADK skills
+---
+Reload your adk-scaffold skill and verify that the required ADK skills for this lab are active.
+---
+Confirm deployed agent and align on objectives
+---
+Get the already running age reviewer agent from Agent Runtime by checking the deployment metadata in this project. We are NOT changing the agent's code in this lab. We are building a Pub/Sub event pipeline and a Manager Dashboard in front of it. Wait for more instructions before proceeding.
+---
+###
+
+###
+Vibecode a frontend dashboard for the Expense Agent
+###
+
+---
+Vibe-code a standalone manager-dashboard service in a new folder
+"submission_frontend/". I want:
+
+  - A FastAPI service with the following endpoints:
+    1. GET /: Serves a beautiful, interactive manager dashboard HTML page. Use Outfit or Inter Google Fonts, sleek glassmorphism styling (dark background, radial glows, cards with backdrop blurs and subtle borders). It should fetch pending approvals from the backend and display them as interactive cards.
+    2. GET /api/pending: Queries the ADK VertexAiSessionService to list all sessions, fetches the full history for each session, and identifies unresolved `adk_request_input` function call events (events requesting input that do not have a corresponding `adk_request_input` function response event). Returns the session ID, interrupt ID, and expense payload details.
+    3. POST /api/action/{session_id}: Resumes the paused session on Agent Runtime. To avoid duplicate parameter errors on the ADK runner, pass the resume payload (with role: user and parts: [function_response: {id: interrupt_id, name: adk_request_input, response: {approved: True/False}}]) directly as the dict value of the `message` argument to the SDK. Also make sure to set the `user_id` strictly to "default-user" to avoid session ownership mismatch errors.
+  - Read the GCP project and AGENT_RUNTIME_ID from environment variables.
+
+  - A pyproject.toml with fastapi, uvicorn, google-adk, and google-cloud-aiplatform.
+
+Make sure the UI looks highly polished and premium (colors, transitions, interactive approve/reject actions with loading spinners, and a modal that slides out to display the agent's final compliance review). Show me the main.py implementation when done.
+---
+Deploy the Dashboard to Cloud Run
+
+---
+Deploy the submission_frontend folder as "age-reviewer-dashboard" to Cloud Run. Pass
+GOOGLE_CLOUD_PROJECT, and AGENT_RUNTIME_ID as environment variables, and configure the deployment to allow unauthenticated invocations so it is publicly reachable. After it deploys, grant the dashboard's runtime service account the necessary roles on the project so it can resume the Agent
+Runtime agent and query its sessions. Print the Dashboard URL when done.
+---
+###
+Build the Pub/Sub topic
+###
+---
+Create the Pub/Sub topics for my event pipeline. I want:
+  1. A Pub/Sub topic called "reviewer-reports" for incoming age-review events.
+  2. A dead-letter topic called "reviewer-reports-dead-letter" so messages that fail repeatedly don't get lost.
+
+Use gcloud commands. Walk me through each one before you run it.
+
+---
+Wire Pub/Sub to Agent Runtime
+
+---
+Create the authenticated Pub/Sub push subscription pointing directly to Agent Runtime. I want:
+  1. A service account called "pubsub-invoker" for Pub/Sub push authentication.
+  2. Permission granted to that service account to query and invoke my Agent Runtime agent.
+  3. The OIDC-authenticated push subscription "reviewer-reports-push" delivering directly to the Agent Runtime's :query REST API, using `--push-no-wrapper` to unwrap the payload, and configured with a 10-minute ack deadline and a dead-letter topic after 5 failed attempts.
+
+Use gcloud commands. Walk me through each one before running.
+---
+
+###
+Run it end to end
+###
+---
+What is the live HTTPS URL of the deployed "age-reviewer-dashboard" Cloud Run service?
+---
+
+#Open this link in browser.
+
+#Trigger an Auto-Approval
+---
+gcloud pubsub topics publish reviewer-reports \
+  --message='{"input": {"message": "{\"age\": 18, \"email\": \"Bill@corp.com\", \"category\": \"tickets\", \"description\": \"Movie\", \"date\": \"2026-07-05\"}"}}'
+---
+
+#Trigger a review
+
+---
+gcloud pubsub topics publish reviewer-reports \
+  --message='{"input": {"message": "{\"age\": 17, \"email\": \"Will@corp.com\", \"category\": \"tickets\", \"description\": \"Movie\", \"date\": \"2026-07-03\"}"}}'
+---
+
+#NOTE:
+Clean up:
+---
+Help me clean up the Google Cloud resources created in this lab. Please delete:
+  1. The Cloud Run service "age-reviewer-dashboard".
+  2. The Pub/Sub subscription "reviewer-reports-push".
+  3. The Pub/Sub topics "reviewer-reports" and "reviewer-reports-dead-letter".
+  4. The service account "pubsub-invoker".
+
+Use gcloud commands with --quiet to execute the cleanup. Walk me through what you are deleting before running.
+---
