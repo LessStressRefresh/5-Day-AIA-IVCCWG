@@ -257,10 +257,10 @@ Create the agent project
 ---
 Use Agents CLI to build a local prototype for an age reviewer agent that
 streamlines ticket review reporting by instantly approving ages of 18 or older
-while flagging lower ages for review. Ensure the graph workflow is
+while flagging lower ages and if the ticket requires a guardian for review. Ensure the graph workflow is
 compatible with ADK 2.0 and includes an `auto_approve` node that automatically
 approves ages of 18 or older, and a `review_agent` node that triggers a
-human-in-the-loop pause (`RequestInput`) for ages under 18 that may also require a guardian.
+human-in-the-loop pause (`RequestInput`) for ages under 18 and that may also require a guardian.
 ---
 
 Agent Runtime:
